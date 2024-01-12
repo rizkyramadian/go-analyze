@@ -20,6 +20,7 @@ func selfDepChecker(fnD *ast.FuncDecl, fset *token.FileSet) []string {
 	res := make([]string, 0, 100)
 	// Check For Receiver
 	rn := receiverName(fnD)
+	rt := receiverType(fnD)
 
 	// Process Function Declaration
 	results := make([]*selfDepCall, 0)
@@ -28,10 +29,10 @@ func selfDepChecker(fnD *ast.FuncDecl, fset *token.FileSet) []string {
 	}
 
 	top := selfDepHierarchyGrouping(results, rn, fset, printLine)
-	return selfDepTraverseAndFormat(top, 0, res)
+	return selfDepTraverseAndFormat(top, 0, res, rn, rt)
 }
 
-func selfDepTraverseAndFormat(node *hierarchy.Node[string], depth int, res []string) []string {
+func selfDepTraverseAndFormat(node *hierarchy.Node[string], depth int, res []string, rn, rt string) []string {
 	if node == nil {
 		return []string{}
 	}
@@ -52,10 +53,13 @@ func selfDepTraverseAndFormat(node *hierarchy.Node[string], depth int, res []str
 	str += strings.Repeat("   ", depth+1)
 	str += "┗━ "
 	str += node.Value
+	if node.Value == rn {
+		str += " (" + rt + ")"
+	}
 	res = append(res, str)
 	depth++
 	for _, v := range node.Children {
-		res = selfDepTraverseAndFormat(v, depth, res)
+		res = selfDepTraverseAndFormat(v, depth, res, rn, rt)
 	}
 	return res
 }
