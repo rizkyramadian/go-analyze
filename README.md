@@ -30,4 +30,7 @@ This can be useful if you are breaking down a big struct into smaller and see th
 #### Flags
 ```
 -l --line prints the line number for function call
+-d <num> --depth <num> Depth on Dependency Check
+-r --dep Prints Dependency Only
+-f --fn Prints Function Only
 ```
