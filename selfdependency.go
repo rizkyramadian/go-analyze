@@ -16,7 +16,7 @@ type selfDepCall struct {
 }
 
 // selfDepChecker runs the self dependency checks and creates array of string to be printed
-func selfDepChecker(fnD *ast.FuncDecl, fset *token.FileSet, printLine bool) []string {
+func selfDepChecker(fnD *ast.FuncDecl, fset *token.FileSet) []string {
 	res := make([]string, 0, 100)
 	// Check For Receiver
 	rn := receiverName(fnD)
@@ -28,15 +28,28 @@ func selfDepChecker(fnD *ast.FuncDecl, fset *token.FileSet, printLine bool) []st
 	}
 
 	top := selfDepHierarchyGrouping(results, rn, fset, printLine)
-	return selfDepTraverseAndFormat(top, 1, res)
+	return selfDepTraverseAndFormat(top, 0, res)
 }
 
 func selfDepTraverseAndFormat(node *hierarchy.Node[string], depth int, res []string) []string {
 	if node == nil {
 		return []string{}
 	}
+
+	if fnOnly && !strings.Contains(node.Value, "()") && len(node.Children) == 0 {
+		return res
+	}
+
+	if depOnly && strings.Contains(node.Value, "()") {
+		return res
+	}
+
+	if depth > selfDepDepth && selfDepDepth != -1 {
+		return res
+	}
+
 	var str string
-	str += strings.Repeat("   ", depth)
+	str += strings.Repeat("   ", depth+1)
 	str += "┗━ "
 	str += node.Value
 	res = append(res, str)
@@ -71,7 +84,6 @@ func selfDepHierarchyGrouping(list []*selfDepCall, rn string, fset *token.FileSe
 
 		// Add Function to the furthest child
 		node, _ := getFurthestChildByValue[string](topNode, v.selectors[1:], 0)
-
 		// Prepare String
 		var str string
 		str += v.function + "()"
