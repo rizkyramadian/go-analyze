@@ -107,9 +107,13 @@ func generateTreeNodes[T comparable](node *hierarchy.Node[T], branches []T) {
 	child, idx := getFurthestChildByValue[T](node, branches, 0)
 	// if child is nil means child hasnt been created
 	if child == nil {
-		new := node.AddChild(&hierarchy.Node[T]{
-			Value: branches[idx],
-		})
+		// Safeguard check
+		new := node.FindChild(branches[idx])
+		if new == nil {
+			new = node.AddChild(&hierarchy.Node[T]{
+				Value: branches[idx],
+			})
+		}
 		generateTreeNodes[T](new, branches[1:])
 	}
 }
@@ -124,8 +128,6 @@ func getFurthestChildByValue[T comparable](node *hierarchy.Node[T], values []T, 
 	if current == nil {
 		return nil, idx
 	}
-
-	idx++
 	return getFurthestChildByValue(node.FindChild(values[0]), values[1:], idx)
 }
 
