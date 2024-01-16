@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 	"strconv"
@@ -30,12 +29,6 @@ func selfDepChecker(fnD *ast.FuncDecl, fset *token.FileSet) []string {
 	}
 
 	top := selfDepHierarchyGrouping(results, rn, fset, printLine)
-	if fnD.Name.Name == "GetSegmentationExperimentData" {
-		fmt.Println(rn, rt)
-		for _, v := range results {
-			fmt.Println(v.selectors, v.function)
-		}
-	}
 	return selfDepTraverseAndFormat(top, 0, res, rn, rt)
 }
 
