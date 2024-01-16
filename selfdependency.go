@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"strconv"
@@ -29,6 +30,12 @@ func selfDepChecker(fnD *ast.FuncDecl, fset *token.FileSet) []string {
 	}
 
 	top := selfDepHierarchyGrouping(results, rn, fset, printLine)
+	if fnD.Name.Name == "GetSegmentationExperimentData" {
+		fmt.Println(rn, rt)
+		for _, v := range results {
+			fmt.Println(v.selectors, v.function)
+		}
+	}
 	return selfDepTraverseAndFormat(top, 0, res, rn, rt)
 }
 
@@ -194,7 +201,7 @@ func selfDepExprStrategy(expr ast.Expr, res []*selfDepCall) []*selfDepCall {
 		return selfDepStmtStrategy(expr.Body, res)
 	case *ast.SelectorExpr:
 		return append(res, &selfDepCall{
-			selectors: selfDepSelectorCrawler(expr.X),
+			selectors: selfDepSelectorCrawler(expr.X, false),
 			function:  expr.Sel.Name,
 			pos:       int(expr.Pos()),
 		})
@@ -211,17 +218,23 @@ func selfDepExprStrategy(expr ast.Expr, res []*selfDepCall) []*selfDepCall {
 	return res
 }
 
-func selfDepSelectorCrawler(expr ast.Expr) []string {
+func selfDepSelectorCrawler(expr ast.Expr, isFunc bool) []string {
 	switch expr := expr.(type) {
 	case *ast.Ident:
 		// Handle identifier nodes.
 		return []string{expr.Name}
 	case *ast.SelectorExpr:
 		// Handle selector expression nodes.
-		return append(selfDepSelectorCrawler(expr.X), expr.Sel.Name)
+		str := expr.Sel.Name
+		if isFunc {
+			str += "()"
+		}
+		return append(selfDepSelectorCrawler(expr.X, false), str)
 	case *ast.IndexExpr:
 		// Handle index expression nodes.
-		return selfDepSelectorCrawler(expr.X)
+		return selfDepSelectorCrawler(expr.X, false)
+	case *ast.CallExpr:
+		return selfDepSelectorCrawler(expr.Fun, true)
 	default:
 		// Handle other types of nodes.
 		return nil
